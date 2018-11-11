@@ -1,0 +1,76 @@
+'use strict';
+
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const jsonWebToken = require('jsonwebtoken');
+const HttpError = require('http-errors');
+
+const HASH_ROUNDS = 8;
+const TOKEN_SEED_LENGTH = 128;
+
+const accountSchema = mongoose.Schema({
+  passwordHash: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  tokenSeed: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  createdOn: {
+    type: Date,
+    default: () => new Date(),
+  },
+});
+
+function pVerifyPassword(password) {
+  return bcrypt.compare(password, this.passwordHash)
+    .then((result) => {
+      if (!result) {
+        throw new HttpError(400, 'AUTH - invalid request');
+      }
+      return this;
+    });
+}
+function pCreateLoginToken() {
+  this.tokenSeed = crypto.randomBytes(TOKEN_SEED_LENGTH).toString('hex');
+  return this.save()
+    .then((account) => {
+      return jsonWebToken.sign({ tokenSeed: account.tokenSeed }, process.env.MY_LAB_SECRET);
+    })
+    .catch(() => new HttpError('400'));
+}
+
+accountSchema.methods.pCreateLoginToken = pCreateLoginToken;
+accountSchema.methods.pVerifyPassword = pVerifyPassword;
+
+const Account = mongoose.model('account', accountSchema);
+
+
+Account.create = (username, email, password) => {
+  return bcrypt.hash(password, HASH_ROUNDS)
+    .then((passwordHash) => {
+      password = null; //eslint-disable-line
+      const tokenSeed = crypto.randomBytes(TOKEN_SEED_LENGTH).toString('hex');
+      return new Account({
+        username,
+        email,
+        passwordHash,
+        tokenSeed,
+      }).save();
+    });
+};
+
+module.exports = Account;
