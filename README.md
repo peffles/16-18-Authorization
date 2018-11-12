@@ -1,11 +1,6 @@
 # Lab 16 - Bearer Authentication
 **Author**: Wyatt Pefley
 **Version**: 1.0.0
-
-***CANNOT START MY SERVER, GETTING THE FOLLOWING ERROR:***
-
-MongooseError: The `uri` parameter to `openUri()` must be a string, got "undefined". Make sure the first parameter to `mongoose.connect()` or `mongoose.createConnection()` is a string.
-
 ***THIS ALSO PREVENTS MY TEST SUITE FROM RUNNING PROPERLY, WILL FIX ASAP***
 # Build Status
 ## Overview
